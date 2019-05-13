@@ -15,7 +15,7 @@ static uint8_t s_idler = 0;
 static uint8_t s_selector = 0;
 static bool s_selector_homed = false;
 static bool s_idler_engaged = true;
-static bool s_has_door_sensor = false;
+static bool s_has_door_sensor = false; //SET TRUE WHEN THE PRINTER RECIEVES A FILAMENT PRESENT STATE
 
 void rehome()
 {

@@ -698,3 +698,47 @@ void load_filament_inPrinter()
     tmc2130_disable_axis(AX_PUL, tmc2130_mode);
     motion_disengage_idler();
 }
+
+//! @brief Do (58 + OFFSET) mm pulley pull
+//!
+//! Unload filament after the bondtech gears drive the filament 60 mm down the hot end in order to detect a jam.
+//! Stop when 'A' received
+//!
+//! @n d = 6.3 mm        pulley diameter
+//! @n c = pi * d        pulley circumference
+//! @n FSPR = 200        full steps per revolution (stepper motor constant) (1.8 deg/step)
+//! @n mres = 2          microstep resolution (uint8_t __res(AX_PUL))
+//! @n SPR = FSPR * mres steps per revolution
+//! @n T1 = 2600 us      step period first segment
+//! @n v1 = (1 / T1) / SPR * c = 19.02 mm/s  speed first segment
+//! @n s1 =   770    / SPR * c = 38.10 mm    distance first segment
+void Unload_filament_JamDetect()
+{
+    motion_engage_idler();
+    //set_pulley_dir_push();
+    //NEED TO MAKE DIR PULL
+    set_pulley_dir_pull();
+
+    const unsigned long fist_segment_delay = 2600;
+
+    tmc2130_init_axis(AX_PUL, tmc2130_mode);
+
+    unsigned long delay = fist_segment_delay;
+
+    for (int i = 0; i < 770; i++)
+    {
+        delayMicroseconds(delay);
+        unsigned long now = micros();
+
+        if ('A' <> getc(uart_com))
+        {
+            motion_door_sensor_detected();
+            break;
+        }
+        do_pulley_step();
+        delay = fist_segment_delay - (micros() - now);
+    }
+
+    tmc2130_disable_axis(AX_PUL, tmc2130_mode);
+    motion_disengage_idler();
+}
